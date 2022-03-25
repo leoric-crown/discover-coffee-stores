@@ -13,6 +13,8 @@ import { StoreContext } from "../../store/store-context";
 import { useContext, useEffect, useState } from "react";
 
 import { fetchCoffeeStoreData } from "../../lib/foursquare";
+import useSWR from "swr";
+import { json } from "stream/consumers";
 
 const emptyCoffeeStore = {
   id: null,
@@ -27,6 +29,7 @@ const defaultImgUrl =
   "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80";
 
 export async function getStaticPaths() {
+  // if possible, make static paths from db instead of from api
   try {
     const coffeeStoreData = await fetchCoffeeStoreData({
       latLong: "19.3854034,-99.1680344",
@@ -46,6 +49,7 @@ export async function getStaticPaths() {
 }
 
 export async function getStaticProps({ params }) {
+  //get static props from db instead of an api
   try {
     const coffeeStoreData = await fetchCoffeeStoreData({
       latLong: "19.3854034,-99.1680344",
@@ -71,14 +75,11 @@ export async function getStaticProps({ params }) {
   }
 }
 
-const handleUpVoteButton = () => {
-  console.log("handle upvote");
-};
-
 export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
   const router = useRouter();
   const { state } = useContext(StoreContext);
   const [coffeeStore, setCoffeeStore] = useState(initialProps.coffeeStore);
+  const [numVotes, setNumVotes] = useState(0);
 
   useEffect(() => {
     const findStoreInContext = (): CoffeeStore => {
@@ -106,6 +107,7 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
       const recordInDb = await fetch(`/api/getCoffeeStoreById?id=${id}`);
       const json = await recordInDb.json();
       setCoffeeStore(json.record.fields);
+      setNumVotes(json.record.fields.votes);
     };
 
     if (coffeeStore && coffeeStore.id) {
@@ -116,6 +118,7 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
     if (state.coffeeStores.length > 0) {
       const coffeeStoreInContext = findStoreInContext();
       setCoffeeStore(coffeeStoreInContext);
+      setNumVotes(coffeeStoreInContext.votes);
       if (coffeeStoreInContext) {
         handleSaveCoffeeStore(coffeeStoreInContext);
         return;
@@ -133,73 +136,104 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
         });
       }
     }
-  }, [state.coffeeStores]);
-
-  if (router.isFallback) return <div> Loading... </div>;
+  }, []);
 
   const { id, name, imgUrl, neighbourhood, address } = coffeeStore
     ? coffeeStore
     : emptyCoffeeStore;
-  return (
-    <div className={styles.layout}>
-      <Head>
-        <title>{name}</title>
-      </Head>
-      <div key={id} className={styles.container}>
-        <div className={styles.col1}>
-          <div className={styles.backToHomeLink}>
-            <Link href="/">
-              <a>← Back to home</a>
-            </Link>
-          </div>
-          <div className={styles.nameWrapper}>
-            <h1 className={styles.name}>{name}</h1>
-          </div>
-          <Image
-            src={imgUrl || defaultImgUrl}
-            width="100%"
-            height="100%"
-            // objectFit="cover"
-            className={styles.storeImg}
-            alt={name}
-            layout="responsive"
-          ></Image>
-        </div>
-        <div className={cls("glass", styles.col2)}>
-          <div className={styles.iconWrapper}>
+  const fetcher = (url) => fetch(url).then((res) => res.json());
+  const { data, error } = useSWR(`/api/getCoffeeStoreById?id=${id}`, fetcher);
+
+  useEffect(() => {
+    if (data && data.record && data.record.fields) {
+      const swrCoffeeStoreData: CoffeeStore = data.record.fields;
+      setCoffeeStore(swrCoffeeStoreData);
+      setNumVotes(swrCoffeeStoreData.votes);
+    }
+  }, [data]);
+
+  const handleUpVoteButton = async () => {
+    setNumVotes(coffeeStore.votes+1)
+    const response = await fetch(`/api/upvoteCoffeeStore?id=${coffeeStore.id}`);
+    if (response.status === 200) {
+      const json = await response.json();
+      const updatedCoffeeStore = json.coffeeStore
+      setCoffeeStore(updatedCoffeeStore);
+      setNumVotes(updatedCoffeeStore.votes)
+    } else {
+      console.error('Something went wrong while upvoting')
+    }
+  };
+
+  if (error) {
+    return <div>Something went wrong retrieving Coffee Store page.</div>;
+  } else if (router.isFallback) {
+    return <div> Loading... </div>;
+  } else {
+    return (
+      <div className={styles.layout}>
+        <Head>
+          <title>{name}</title>
+        </Head>
+        <div key={id} className={styles.container}>
+          <div className={styles.col1}>
+            <div className={styles.backToHomeLink}>
+              <Link href="/">
+                <a>← Back to home</a>
+              </Link>
+            </div>
+            <div className={styles.nameWrapper}>
+              <h1 className={styles.name}>{name}</h1>
+            </div>
             <Image
-              className={styles.filterCafeDark}
-              src="/static/icons/places.svg"
-              width="32"
-              height="32"
-            />
-            <p className={styles.text}>{address}</p>
+              src={imgUrl || defaultImgUrl}
+              width="100%"
+              height="100%"
+              // objectFit="cover"
+              className={styles.storeImg}
+              alt={name}
+              layout="responsive"
+            ></Image>
           </div>
-          {neighbourhood && (
+          <div className={cls("glass", styles.col2)}>
             <div className={styles.iconWrapper}>
               <Image
                 className={styles.filterCafeDark}
-                src="/static/icons/nearMe.svg"
+                src="/static/icons/places.svg"
                 width="32"
                 height="32"
               />
-              <p className={styles.text}>{neighbourhood}</p>
+              <p className={styles.text}>{address}</p>
             </div>
-          )}
-          <div className={styles.iconWrapper}>
-            <Image
-              className={styles.filterCafeDark}
-              src="/static/icons/star.svg"
-              width="32"
-              height="32"
-            />
-            <p className={styles.text}>1</p>
+            {neighbourhood && (
+              <div className={styles.iconWrapper}>
+                <Image
+                  className={styles.filterCafeDark}
+                  src="/static/icons/nearMe.svg"
+                  width="32"
+                  height="32"
+                />
+                <p className={styles.text}>{neighbourhood}</p>
+              </div>
+            )}
+            <div className={styles.iconWrapper}>
+              <Image
+                className={styles.filterCafeDark}
+                src="/static/icons/star.svg"
+                width="32"
+                height="32"
+              />
+              <p className={styles.text}>{numVotes}</p>
+            </div>
+            <button
+              className={styles.upvoteButton}
+              onClick={handleUpVoteButton}
+            >
+              Upvote
+            </button>
           </div>
-          <button className={styles.upvoteButton} onClick={handleUpVoteButton}>
-            Upvote
-          </button>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 }

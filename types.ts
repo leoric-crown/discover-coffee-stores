@@ -8,6 +8,7 @@ export interface CoffeeStore {
   websiteUrl: string;
   address: string;
   neighbourhood: string;
+  votes: number;
 }
 
 export interface StaticHomeProps {

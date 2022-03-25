@@ -1,4 +1,5 @@
 import Airtable from "airtable";
+import { CoffeeStore } from "../types";
 
 const base = new Airtable({ apiKey: process.env.AIRTABLEAPIKEY }).base(
   process.env.AIRTABLEBASEID
@@ -14,5 +15,9 @@ export const findRecordById = async (id: string) => {
 
   return findRecords.length > 0 ? findRecords[0] : undefined;
 };
+
+export const getCoffeeStoreFromRecord = (record) => {
+  return record.fields as CoffeeStore
+}
 
 export default table;

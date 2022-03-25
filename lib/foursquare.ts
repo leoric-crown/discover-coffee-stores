@@ -63,6 +63,7 @@ const transformCoffeeStoreRes = (results) => {
           neighbourhood: res.location.neighborhood
             ? res.location.neighborhood[0]
             : null,
+          votes: 0,
         };
       }
     );
