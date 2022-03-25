@@ -21,7 +21,7 @@ export async function getStaticProps(context: any) {
 
 export default function Home(props: StaticHomeProps) {
   const { state, dispatch } = useContext(StoreContext);
-  const { latLong, coffeeStores } = state;
+  const { latLong } = state;
   const [coffeeStoresError, setCoffeeStoresError] = useState("");
   const [isFetchingData, setIsFetchingData] = useState(false);
 
