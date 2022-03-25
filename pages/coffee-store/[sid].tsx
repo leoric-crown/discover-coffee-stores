@@ -12,30 +12,63 @@ import cls from "classnames";
 import { StoreContext } from "../../store/store-context";
 import { useContext, useEffect, useState } from "react";
 
-import { getCoffeeStoreData } from "../../data/foursquare";
+import { fetchCoffeeStoreData } from "../../lib/foursquare";
+
+const emptyCoffeeStore = {
+  id: null,
+  address: null,
+  name: null,
+  neighbourhood: null,
+  imgUrl: null,
+  websiteUrl: null,
+};
+
+const defaultImgUrl =
+  "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80";
 
 export async function getStaticPaths() {
-  const coffeeStoreData = await getCoffeeStoreData();
+  try {
+    const coffeeStoreData = await fetchCoffeeStoreData({
+      latLong: "19.3854034,-99.1680344",
+      limit: 6,
+    });
 
-  return {
-    paths: coffeeStoreData.map((coffeeStore) => {
-      return { params: { sid: coffeeStore.id } };
-    }),
-    fallback: true,
-  };
+    const initialProps = {
+      paths: coffeeStoreData.map((coffeeStore) => {
+        return { params: { sid: coffeeStore.id } };
+      }),
+      fallback: true,
+    };
+    return initialProps;
+  } catch (error) {
+    console.error("there was an error getting static paths", error.message);
+  }
 }
 
 export async function getStaticProps({ params }) {
-  console.log("fetching data again");
-  const coffeeStoresData = await getCoffeeStoreData();
-  const findCoffeeStoreById = coffeeStoresData.find((store) => {
-    return store.id.toString() === params.sid;
-  });
-  return {
-    props: {
-      coffeeStore: findCoffeeStoreById || {}
-    },
-  };
+  try {
+    const coffeeStoreData = await fetchCoffeeStoreData({
+      latLong: "19.3854034,-99.1680344",
+      limit: 6,
+    });
+
+    const findCoffeeStoreById = coffeeStoreData.find((store) => {
+      return store.id.toString() === params.sid;
+    });
+
+    return {
+      props: {
+        coffeeStore: findCoffeeStoreById || emptyCoffeeStore,
+      },
+    };
+  } catch (error) {
+    console.error("there was an error getting static props", error.message);
+    return {
+      props: {
+        coffeeStore: emptyCoffeeStore,
+      },
+    };
+  }
 }
 
 const handleUpVoteButton = () => {
@@ -46,36 +79,69 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
   const router = useRouter();
   const { state } = useContext(StoreContext);
   const [coffeeStore, setCoffeeStore] = useState(initialProps.coffeeStore);
-  console.log("context state in coffeestorepage", state);
+
+  useEffect(() => {
+    if (coffeeStore && coffeeStore.id) return;
+
+    const findStoreInContext = (): CoffeeStore => {
+      return state.coffeeStores.find((store) => router.query.sid === store.id);
+    };
+
+    const handleSaveCoffeeStore = async (newCoffeeStore: CoffeeStore) => {
+      try {
+        const response = await fetch("/api/saveCoffeeStore", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newCoffeeStore),
+        });
+      } catch (error) {
+        console.error("Error creating coffeestore", {
+          newCoffeeStore,
+          error: error.message,
+        });
+      }
+    };
+
+    const handleFindDbRecordById = async (id: string) => {
+      const recordInDb = await fetch(`/api/getCoffeeStoreById?id=${id}`);
+      const json = await recordInDb.json();
+      setCoffeeStore(json.record.fields);
+    };
+    if (state.coffeeStores.length > 0) {
+      const coffeeStoreInContext = findStoreInContext();
+      setCoffeeStore(coffeeStoreInContext);
+      if (coffeeStoreInContext) {
+        handleSaveCoffeeStore(coffeeStoreInContext);
+        return;
+      }
+    } else {
+      try {
+        const getId = new RegExp("([^/]+$)");
+        handleFindDbRecordById(router.asPath.toString().match(getId)[0]);
+        return;
+      } catch (error) {
+        console.error("Error getting coffeeStore by id", {
+          coffeeStore,
+          error: error.message,
+          errorFull: error,
+        });
+      }
+    }
+  }, [state.coffeeStores]);
 
   if (router.isFallback) return <div> Loading... </div>;
 
-  useEffect(() => {
-    if (Object.keys(coffeeStore).length === 0) {
-      const findStore = findStoreInContext() || {
-        id: null,
-        address: null,
-        name: null,
-        neighbourhood: null,
-        imgUrl: null,
-        websiteUrl: null,
-      };
-      setCoffeeStore(findStore);
-    }
-  },[router.query.id]);
-
-  const findStoreInContext = (): CoffeeStore => {
-    return state.coffeeStores.find((store) => router.query.sid === store.id);
-  };
-
-  const { address, name, neighbourhood, imgUrl } = coffeeStore
-  console.log("in [sid]", { initialProps }, { state });
+  const { id, name, imgUrl, neighbourhood, address } = coffeeStore
+    ? coffeeStore
+    : emptyCoffeeStore;
   return (
     <div className={styles.layout}>
       <Head>
         <title>{name}</title>
       </Head>
-      <div className={styles.container}>
+      <div key={id} className={styles.container}>
         <div className={styles.col1}>
           <div className={styles.backToHomeLink}>
             <Link href="/">
@@ -86,12 +152,10 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
             <h1 className={styles.name}>{name}</h1>
           </div>
           <Image
-            src={
-              imgUrl ||
-              "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80"
-            }
-            width={2}
-            height={2}
+            src={imgUrl || defaultImgUrl}
+            width="100%"
+            height="100%"
+            // objectFit="cover"
             className={styles.storeImg}
             alt={name}
             layout="responsive"

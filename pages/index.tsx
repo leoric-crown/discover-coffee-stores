@@ -4,14 +4,19 @@ import Banner from "../components/banner";
 import Card from "../components/card";
 import styles from "../styles/home.module.css";
 import { CoffeeStore, StaticHomeProps } from "../types";
-import { getCoffeeStoreData } from "../data/foursquare";
 
 import { ActionTypes, StoreContext } from "../store/store-context";
 import { useContext, useEffect, useState, useRef } from "react";
-import useLocation from "../hooks/use-location";
+import useLocation from "../hooks/useLocation";
+import { fetchCoffeeStoreData } from "../lib/foursquare";
+import { decodeCoffeeStoreURIs } from "../lib/coffee-stores";
 
 export async function getStaticProps(context: any) {
-  const data = await getCoffeeStoreData();
+  // const data = await fetch(`/api/getCoffeeStores?latLong=${'19.3854034,-99.1680344'}`);
+  const data = await fetchCoffeeStoreData({
+    latLong: "19.3854034,-99.1680344",
+    limit: 6,
+  });
   return { props: { staticCoffeeStores: data } };
 }
 
@@ -26,11 +31,14 @@ export default function Home(props: StaticHomeProps) {
 
   const fetchLatLongCoffeeStores = async (newLatLong: string) => {
     try {
-      const data = await getCoffeeStoreData(newLatLong, 24);
-      if (data.length > 0) {
+      const response = await fetch(
+        `/api/getCoffeeStores?latLong=${newLatLong}&limit=${12}`
+      );
+      const coffeeStores: CoffeeStore[] = await response.json();
+      if (coffeeStores.length > 0) {
         dispatch({
           type: ActionTypes.SetCoffeeStores,
-          payload: data,
+          payload: decodeCoffeeStoreURIs(coffeeStores),
         });
 
         dispatch({
@@ -47,7 +55,6 @@ export default function Home(props: StaticHomeProps) {
 
   useEffect(() => {
     if (latLongResult.length > 0 && latLongResult !== latLong) {
-      console.log("Location changed! Updating...");
       dispatch({
         type: ActionTypes.SetLatLong,
         payload: latLongResult,
@@ -61,9 +68,6 @@ export default function Home(props: StaticHomeProps) {
 
   useEffect(() => {
     if (latLong.length > 0 && latLongResult.length > 0) {
-      console.log(
-        "new latLong in state (from latLongResult), fetching new stores..."
-      );
       setIsFetchingData(true);
       fetchLatLongCoffeeStores(latLong);
     }
@@ -72,12 +76,6 @@ export default function Home(props: StaticHomeProps) {
   const handleOnBannerBtnClick = () => {
     handleLocation();
   };
-
-  console.log({
-    latLong,
-    latLongResult,
-    state,
-  });
 
   return (
     <div className={styles.container}>

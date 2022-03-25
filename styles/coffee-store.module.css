@@ -12,6 +12,8 @@
 
 .col1 {
   place-self: center;
+  width: inherit;
+  max-width: 500px;
 }
 
 .backToHomeLink {
