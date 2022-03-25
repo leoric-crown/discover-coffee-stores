@@ -12,7 +12,6 @@ import { fetchCoffeeStoreData } from "../lib/foursquare";
 import { decodeCoffeeStoreURIs } from "../lib/coffee-stores";
 
 export async function getStaticProps(context: any) {
-  // const data = await fetch(`/api/getCoffeeStores?latLong=${'19.3854034,-99.1680344'}`);
   const data = await fetchCoffeeStoreData({
     latLong: "19.3854034,-99.1680344",
     limit: 6,
@@ -34,11 +33,11 @@ export default function Home(props: StaticHomeProps) {
       const response = await fetch(
         `/api/getCoffeeStores?latLong=${newLatLong}&limit=${12}`
       );
-      const coffeeStores: CoffeeStore[] = await response.json();
-      if (coffeeStores.length > 0) {
+      const responseCoffeeStores: CoffeeStore[] = await response.json();
+      if (responseCoffeeStores.length > 0) {
         dispatch({
           type: ActionTypes.SetCoffeeStores,
-          payload: decodeCoffeeStoreURIs(coffeeStores),
+          payload: decodeCoffeeStoreURIs(responseCoffeeStores),
         });
 
         dispatch({

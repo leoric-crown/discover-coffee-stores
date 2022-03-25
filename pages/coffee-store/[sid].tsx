@@ -81,8 +81,6 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
   const [coffeeStore, setCoffeeStore] = useState(initialProps.coffeeStore);
 
   useEffect(() => {
-    if (coffeeStore && coffeeStore.id) return;
-
     const findStoreInContext = (): CoffeeStore => {
       return state.coffeeStores.find((store) => router.query.sid === store.id);
     };
@@ -109,6 +107,12 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
       const json = await recordInDb.json();
       setCoffeeStore(json.record.fields);
     };
+
+    if (coffeeStore && coffeeStore.id) {
+      handleSaveCoffeeStore(coffeeStore);
+      return;
+    }
+
     if (state.coffeeStores.length > 0) {
       const coffeeStoreInContext = findStoreInContext();
       setCoffeeStore(coffeeStoreInContext);
