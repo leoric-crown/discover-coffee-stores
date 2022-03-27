@@ -8,63 +8,48 @@ import { CoffeeStorePageProps, CoffeeStore } from "../../types";
 import styles from "../../styles/coffee-store.module.css";
 
 import cls from "classnames";
-
 import { StoreContext } from "../../store/store-context";
 import { useContext, useEffect, useState } from "react";
-
-import { fetchCoffeeStoreData } from "../../lib/foursquare";
-import useSWR from "swr";
-import { json } from "stream/consumers";
-
-import { handleSaveCoffeeStore } from "../../lib/coffee-stores";
+import {
+  fetchNewStaticCoffeeStores,
+  defaultLatLong,
+} from "../../lib/foursquare";
+import {
+  handleSaveCoffeeStore,
+  emptyCoffeeStore,
+  getImgUrl,
+} from "../../lib/coffee-stores";
 import {
   createRecords,
   findRecordById,
   findStaticPageRecords,
 } from "../../lib/airtable";
+import { parseRecords } from "../../lib/parse-records";
 
-const emptyCoffeeStore = {
-  id: null,
-  address: null,
-  name: null,
-  neighbourhood: null,
-  imgUrl: null,
-  websiteUrl: null,
-};
+import useSWR from "swr";
 
 const defaultImgUrl =
   "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80";
 
 export async function getStaticPaths() {
-  console.log("in getStaticPaths");
   try {
     const dbStaticCoffeeStores = await findStaticPageRecords();
     let staticCoffeeStores: CoffeeStore[];
     if (dbStaticCoffeeStores.length !== 0) {
-      console.log("found coffeestores in db");
-      staticCoffeeStores = dbStaticCoffeeStores.map(
-        (record) => record.fields as any
-      );
+      staticCoffeeStores = parseRecords(dbStaticCoffeeStores);
     } else {
-      console.log("fetching coffeestores from api");
-      staticCoffeeStores = await fetchCoffeeStoreData({
-        latLong: "19.3854034,-99.1680344",
-        limit: 6,
+      staticCoffeeStores = await fetchNewStaticCoffeeStores(defaultLatLong, 6);
+      staticCoffeeStores.forEach((coffeeStore: CoffeeStore) => {
+        coffeeStore.static = true;
       });
-      staticCoffeeStores.forEach(
-        (coffeeStore: CoffeeStore) => (coffeeStore.static = true)
-      );
-      console.log("creating records");
       createRecords(staticCoffeeStores);
     }
-
     const initialProps = {
       paths: staticCoffeeStores.map((coffeeStore) => {
         return { params: { sid: coffeeStore.id } };
       }),
       fallback: true,
     };
-    console.log("getStaticPaths returning: ", { initialProps });
     return initialProps;
   } catch (error) {
     console.error(
@@ -75,23 +60,21 @@ export async function getStaticPaths() {
 }
 
 export async function getStaticProps({ params }) {
-  console.log("in getStaticProps", { params });
   try {
     const dbStaticCoffeeStore = await findRecordById(params.sid);
-    let coffeeStore: CoffeeStore[];
+    let coffeeStore: CoffeeStore;
+
     if (dbStaticCoffeeStore?.fields) {
-      console.log("found coffeestore in db");
       coffeeStore = dbStaticCoffeeStore.fields as any;
     } else {
-      console.log("fetching 6 coffeestores from api");
-      const coffeeStoreData = await fetchCoffeeStoreData({
-        latLong: "19.3854034,-99.1680344",
-        limit: 6,
-      });
+      const apiStaticCoffeeStores = await fetchNewStaticCoffeeStores(
+        defaultLatLong,
+        6
+      );
 
-      coffeeStore = coffeeStoreData.find((store) => {
+      coffeeStore = apiStaticCoffeeStores.find((store: CoffeeStore) => {
         return store.id.toString() === params.sid;
-      }) as any;
+      });
     }
     const initialProps = {
       props: {
@@ -99,7 +82,6 @@ export async function getStaticProps({ params }) {
         isStatic: true,
       },
     };
-    console.log("getStaticProps returning: ", { initialProps });
     return initialProps;
   } catch (error) {
     console.error("there was an error getting static props", error.message);
@@ -125,8 +107,11 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
     const handleFindDbRecordById = async (id: string) => {
       const recordInDb = await fetch(`/api/getCoffeeStoreById?id=${id}`);
       const json = await recordInDb.json();
-      setCoffeeStore(json.record.fields);
-      setNumVotes(json.record.fields.votes);
+
+      if (recordInDb.status !== 404) {
+        setCoffeeStore(json.record.fields);
+        setNumVotes(json.record.fields.votes);
+      }
     };
 
     if (coffeeStore && coffeeStore.id) {
@@ -136,6 +121,7 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
 
     if (state.coffeeStores.length > 0) {
       const coffeeStoreInContext = findStoreInContext();
+
       setCoffeeStore(coffeeStoreInContext);
       setNumVotes(coffeeStoreInContext.votes);
       if (coffeeStoreInContext) {
@@ -156,7 +142,6 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
       }
     }
   }, []);
-
   const { id, name, imgUrl, neighbourhood, address } = coffeeStore
     ? coffeeStore
     : emptyCoffeeStore;
@@ -174,9 +159,16 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
   const handleUpVoteButton = async () => {
     setNumVotes(coffeeStore.votes + 1);
     const response = await fetch(`/api/upvoteCoffeeStore?id=${coffeeStore.id}`);
+    const json = await response.json();
+
     if (response.status === 200) {
-      const json = await response.json();
-      const updatedCoffeeStore = json.coffeeStore;
+      const prevImgUrl = coffeeStore.imgUrl;
+      const { imgUrl, ...fields } = json.coffeeStore;
+      const updatedCoffeeStore: CoffeeStore = {
+        imgUrl: prevImgUrl,
+        ...json.coffeeStore,
+      };
+
       setCoffeeStore(updatedCoffeeStore);
       setNumVotes(updatedCoffeeStore.votes);
     } else {
@@ -205,10 +197,9 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
               <h1 className={styles.name}>{name}</h1>
             </div>
             <Image
-              src={imgUrl || defaultImgUrl}
+              src={imgUrl?.prefix ? getImgUrl(imgUrl) : defaultImgUrl}
               width="100%"
               height="100%"
-              // objectFit="cover"
               className={styles.storeImg}
               alt={name}
               layout="responsive"

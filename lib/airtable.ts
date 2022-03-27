@@ -15,7 +15,35 @@ export const findRecordsById = async (records) => {
     })
     .firstPage();
 
-  return findRecords.length > 0 ? findRecords : undefined;
+  const coffeeStoreRecords = findRecords.map(parseImgUrl);
+
+  return findRecords.length > 0 ? coffeeStoreRecords : undefined;
+};
+const parseImgUrl = (record) => {
+  const parsedRecord = record;
+  const coffeeStoreFields = record?.fields as any;
+  if (coffeeStoreFields?.imgUrl) {
+    const { imgUrl } = coffeeStoreFields;
+    coffeeStoreFields.imgUrl = JSON.parse(imgUrl);
+  }
+  parsedRecord.fields = coffeeStoreFields;
+  return parsedRecord;
+};
+
+export const upvoteCoffeeStore = async (id: string, votes: number) => {
+  const updateArray = [
+    {
+      id,
+      fields: { votes: votes + 1 },
+    },
+  ];
+  try {
+    const update = await table.update(updateArray);
+    const parsedUpdate = update.map(parseImgUrl);
+    return parsedUpdate[0].fields;
+  } catch (error) {
+    console.error("ERROR: Something went wrong", error.message);
+  }
 };
 
 export const findRecordById = async (id: string) => {
@@ -25,7 +53,9 @@ export const findRecordById = async (id: string) => {
     })
     .firstPage();
 
-  return findRecords.length > 0 ? findRecords[0] : undefined;
+  const coffeeStoreRecords = findRecords.map(parseImgUrl);
+
+  return findRecords.length > 0 ? coffeeStoreRecords[0] : undefined;
 };
 
 export const findStaticPageRecords = async () => {
@@ -43,21 +73,35 @@ export const getCoffeeStoreFromRecord = (record) => {
 };
 
 export const createRecord = async (coffeeStore: CoffeeStore) => {
+  const { imgUrl, ...coffeeStoreNoImgUrl } = coffeeStore;
+  const stringCoffeeStore = {
+    imgUrl: JSON.stringify(imgUrl),
+    ...coffeeStoreNoImgUrl,
+  };
   const savedRecord = await table.create([
     {
-      fields: { ...coffeeStore },
+      fields: { ...stringCoffeeStore },
     },
   ]);
   return savedRecord[0];
 };
 
 export const createRecords = async (coffeeStores: CoffeeStore[]) => {
-  const fieldsToCreate = coffeeStores.map((coffeeStore) => {
+  const stringCoffeeStores = coffeeStores.map((coffeeStore) => {
+    const { imgUrl, ...coffeeStoreNoImgUrl } = coffeeStore;
+    const stringCoffeeStore = {
+      imgUrl: JSON.stringify(imgUrl),
+      ...coffeeStoreNoImgUrl,
+    };
+    return stringCoffeeStore;
+  });
+  const fieldsToCreate = stringCoffeeStores.map((coffeeStore) => {
     return {
       fields: { ...coffeeStore },
     };
   });
-  const savedRecords = await table.create(fieldsToCreate);
+  const savedRecords = await table.create(fieldsToCreate as any);
+
   return savedRecords;
 };
 

@@ -1,15 +1,17 @@
-import { CoffeeStore } from "../types";
+import { CoffeeStore, ImgUrl } from "../types";
 import { decodeCoffeeStoreURIs } from "./coffee-stores";
 
 export interface QueryParameters {
   query?: string;
   latLong?: string;
-  category?: number;
+  categories?: string;
   limit?: number;
 }
 
 const endpoints = {
   fsqPlaces: "https://api.foursquare.com/v3/places/search",
+  fsqPhotos: (fsq_id) =>
+    `https://api.foursquare.com/v3/places/${fsq_id}/photos`,
 };
 
 const queryOptions = {
@@ -91,15 +93,34 @@ const fsqPlacesRequest = async (queryParameters: QueryParameters) => {
 
 export async function fetchCoffeeStoreData(queryParameters: QueryParameters) {
   try {
-    const { query, latLong, category, limit } = queryParameters;
+    const { query, latLong, categories, limit } = queryParameters;
     const coffeeStoreData = await fsqPlacesRequest({
       query: query || null,
-      latLong: latLong || null, //"19.3854034,-99.1680344",
-      category: category || null,
+      latLong: latLong || null,
+      categories: categories || "13032",
       limit: limit || 6,
     });
 
-    return coffeeStoreData;
+    const coffeeStoreDataWithImages: CoffeeStore[] = await Promise.all(
+      coffeeStoreData.map(async (coffeeStore) => {
+        const fsq_id = coffeeStore.id;
+        const response = await fetch(endpoints.fsqPhotos(fsq_id), queryOptions);
+        return new Promise(async (resolve) => {
+          const json = await response.json();
+          const topPhoto = json[0];
+          const { prefix, suffix, width, height } = topPhoto
+          const imgUrl: ImgUrl = {
+            prefix,
+            suffix,
+            width,
+            height
+          }
+          resolve({ ...coffeeStore, imgUrl } as CoffeeStore);
+        });
+      })
+    );
+
+    return coffeeStoreDataWithImages;
   } catch (error) {
     console.error(
       "There was an error in fetchCoffeeStoreData: ",
@@ -108,3 +129,17 @@ export async function fetchCoffeeStoreData(queryParameters: QueryParameters) {
     throw error;
   }
 }
+
+export const fetchNewStaticCoffeeStores = async (
+  latLong: string,
+  limit: number
+) => {
+  const newStaticCoffeeStores: CoffeeStore[] = await fetchCoffeeStoreData({
+    latLong,
+    limit,
+  });
+
+  return newStaticCoffeeStores;
+};
+
+export const defaultLatLong = "19.3854034,-99.1680344";

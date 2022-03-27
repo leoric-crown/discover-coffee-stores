@@ -10,25 +10,21 @@ import { ActionTypes, StoreContext } from "../store/store-context";
 import { useContext, useEffect, useState } from "react";
 import useLocation from "../hooks/useLocation";
 
-import { fetchCoffeeStoreData } from "../lib/foursquare";
-import { decodeCoffeeStoreURIs } from "../lib/coffee-stores";
+import { decodeCoffeeStoreURIs, getImgUrl } from "../lib/coffee-stores";
 import { findStaticPageRecords } from "../lib/airtable";
+import { parseRecords } from "../lib/parse-records";
 
 import { createRecords } from "../lib/airtable";
+import { fetchNewStaticCoffeeStores, defaultLatLong } from "../lib/foursquare";
 
 export async function getStaticProps(context: any) {
   try {
     const dbStaticCoffeeStores = await findStaticPageRecords();
     let staticCoffeeStores: CoffeeStore[];
-    if (dbStaticCoffeeStores.length !== 0)
-      staticCoffeeStores = dbStaticCoffeeStores.map(
-        (record) => record.fields as any
-      );
-    else {
-      staticCoffeeStores = await fetchCoffeeStoreData({
-        latLong: "19.3854034,-99.1680344",
-        limit: 6,
-      });
+    if (dbStaticCoffeeStores.length !== 0) {
+      staticCoffeeStores = parseRecords(dbStaticCoffeeStores);
+    } else {
+      staticCoffeeStores = await fetchNewStaticCoffeeStores(defaultLatLong, 6);
       staticCoffeeStores.forEach(
         (coffeeStore: CoffeeStore) => (coffeeStore.static = true)
       );
@@ -139,7 +135,7 @@ export default function Home(props: HomeProps) {
                       key={store.id}
                       name={store.name}
                       imgUrl={
-                        store.imgUrl ||
+                        getImgUrl(store.imgUrl, 250, 250) ||
                         "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80"
                       }
                       href={`/coffee-store/${store.id}`}
@@ -160,7 +156,7 @@ export default function Home(props: HomeProps) {
                   key={store.id}
                   name={store.name}
                   imgUrl={
-                    store.imgUrl ||
+                    getImgUrl(store.imgUrl, 250, 250) ||
                     "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80"
                   }
                   href={`/coffee-store/${store.id}`}

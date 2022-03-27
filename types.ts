@@ -4,12 +4,19 @@ import { MouseEventHandler } from "react";
 export interface CoffeeStore {
   id: Key;
   name: string;
-  imgUrl: string;
+  imgUrl: ImgUrl;
   websiteUrl: string;
   address: string;
   neighbourhood: string;
   votes: number;
   static: boolean;
+}
+
+export interface ImgUrl {
+  prefix: string;
+  suffix: string;
+  width: number;
+  height: number;
 }
 
 export interface HomeProps {

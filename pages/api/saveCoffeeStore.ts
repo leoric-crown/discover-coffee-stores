@@ -1,5 +1,4 @@
 import table, { findRecordById } from "../../lib/airtable";
-import { CoffeeStore } from "../../types";
 import { createRecord } from "../../lib/airtable";
 
 export default async (req, res) => {

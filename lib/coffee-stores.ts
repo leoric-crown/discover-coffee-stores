@@ -1,4 +1,4 @@
-import { CoffeeStore } from "../types";
+import { CoffeeStore, ImgUrl } from "../types";
 
 export const decodeCoffeeStoreURIs = (coffeeStores: CoffeeStore[]) => {
   const decodedCoffeeStores = coffeeStores.map((coffeeStore) => {
@@ -31,4 +31,23 @@ export const handleSaveCoffeeStore = async (newCoffeeStore: CoffeeStore) => {
       error: error.message,
     });
   }
+};
+
+export const getImgUrl = (imgUrl: ImgUrl, w?: number, h?: number): string => {
+  const { prefix, suffix, width, height } = imgUrl;
+  const size =
+    !w || !h
+      ? "original"
+      : `${w < width ? w : width}x${h < height ? h : height}`;
+
+  return prefix + size + suffix;
+};
+
+export const emptyCoffeeStore = {
+  id: null,
+  address: null,
+  name: null,
+  neighbourhood: null,
+  imgUrl: null,
+  websiteUrl: null,
 };

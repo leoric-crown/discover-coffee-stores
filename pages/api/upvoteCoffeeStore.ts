@@ -2,34 +2,18 @@ import table, {
   findRecordById,
   getCoffeeStoreFromRecord,
 } from "../../lib/airtable";
-
-const upvoteCoffeeStore = async (id: string, votes: number) => {
-  const updateArray = [
-    {
-      id,
-      fields: { votes: votes + 1 },
-    },
-  ];
-  try {
-    const update = await table.update(updateArray);
-    return update[0].fields;
-  } catch (error) {
-    console.error("ERROR: Something went wrong", error.message);
-  }
-};
+import { upvoteCoffeeStore } from "../../lib/airtable";
 
 export default async (req, res) => {
   try {
     if (req.method === "GET") {
       const { id } = req.query;
       const findCoffeeStoreRecord = await findRecordById(id);
-
       if (findCoffeeStoreRecord) {
         const dbId = findCoffeeStoreRecord.id;
-        const coffeeStore = getCoffeeStoreFromRecord(findCoffeeStoreRecord);
         const updatedCoffeeStore = await upvoteCoffeeStore(
           dbId,
-          coffeeStore.votes
+          findCoffeeStoreRecord.fields.votes
         );
         return res.status(200).json({
           message: "Record has been upvoted!",
