@@ -1,14 +1,6 @@
 import table, { findRecordById } from "../../lib/airtable";
 import { CoffeeStore } from "../../types";
-
-const createRecord = async (coffeeStore: CoffeeStore) => {
-  const savedRecord = await table.create([
-    {
-      fields: { ...coffeeStore },
-    },
-  ]);
-  return savedRecord[0];
-};
+import { createRecord } from "../../lib/airtable";
 
 export default async (req, res) => {
   try {

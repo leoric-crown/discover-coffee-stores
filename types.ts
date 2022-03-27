@@ -9,9 +9,10 @@ export interface CoffeeStore {
   address: string;
   neighbourhood: string;
   votes: number;
+  static: boolean;
 }
 
-export interface StaticHomeProps {
+export interface HomeProps {
   staticCoffeeStores: CoffeeStore[];
 }
 

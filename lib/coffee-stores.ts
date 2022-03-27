@@ -15,3 +15,20 @@ export const decodeCoffeeStoreURIs = (coffeeStores: CoffeeStore[]) => {
   });
   return decodedCoffeeStores;
 };
+
+export const handleSaveCoffeeStore = async (newCoffeeStore: CoffeeStore) => {
+  try {
+    const response = await fetch("/api/saveCoffeeStore", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newCoffeeStore),
+    });
+  } catch (error) {
+    console.error("Error creating coffeestore", {
+      newCoffeeStore,
+      error: error.message,
+    });
+  }
+};

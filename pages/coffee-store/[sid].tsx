@@ -16,6 +16,13 @@ import { fetchCoffeeStoreData } from "../../lib/foursquare";
 import useSWR from "swr";
 import { json } from "stream/consumers";
 
+import { handleSaveCoffeeStore } from "../../lib/coffee-stores";
+import {
+  createRecords,
+  findRecordById,
+  findStaticPageRecords,
+} from "../../lib/airtable";
+
 const emptyCoffeeStore = {
   id: null,
   address: null,
@@ -29,42 +36,71 @@ const defaultImgUrl =
   "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80";
 
 export async function getStaticPaths() {
-  // if possible, make static paths from db instead of from api
+  console.log("in getStaticPaths");
   try {
-    const coffeeStoreData = await fetchCoffeeStoreData({
-      latLong: "19.3854034,-99.1680344",
-      limit: 6,
-    });
+    const dbStaticCoffeeStores = await findStaticPageRecords();
+    let staticCoffeeStores: CoffeeStore[];
+    if (dbStaticCoffeeStores.length !== 0) {
+      console.log("found coffeestores in db");
+      staticCoffeeStores = dbStaticCoffeeStores.map(
+        (record) => record.fields as any
+      );
+    } else {
+      console.log("fetching coffeestores from api");
+      staticCoffeeStores = await fetchCoffeeStoreData({
+        latLong: "19.3854034,-99.1680344",
+        limit: 6,
+      });
+      staticCoffeeStores.forEach(
+        (coffeeStore: CoffeeStore) => (coffeeStore.static = true)
+      );
+      console.log("creating records");
+      createRecords(staticCoffeeStores);
+    }
 
     const initialProps = {
-      paths: coffeeStoreData.map((coffeeStore) => {
+      paths: staticCoffeeStores.map((coffeeStore) => {
         return { params: { sid: coffeeStore.id } };
       }),
       fallback: true,
     };
+    console.log("getStaticPaths returning: ", { initialProps });
     return initialProps;
   } catch (error) {
-    console.error("there was an error getting static paths", error.message);
+    console.error(
+      "There was an error fetching static paths in /[sid]",
+      error.message
+    );
   }
 }
 
 export async function getStaticProps({ params }) {
-  //get static props from db instead of an api
+  console.log("in getStaticProps", { params });
   try {
-    const coffeeStoreData = await fetchCoffeeStoreData({
-      latLong: "19.3854034,-99.1680344",
-      limit: 6,
-    });
+    const dbStaticCoffeeStore = await findRecordById(params.sid);
+    let coffeeStore: CoffeeStore[];
+    if (dbStaticCoffeeStore?.fields) {
+      console.log("found coffeestore in db");
+      coffeeStore = dbStaticCoffeeStore.fields as any;
+    } else {
+      console.log("fetching 6 coffeestores from api");
+      const coffeeStoreData = await fetchCoffeeStoreData({
+        latLong: "19.3854034,-99.1680344",
+        limit: 6,
+      });
 
-    const findCoffeeStoreById = coffeeStoreData.find((store) => {
-      return store.id.toString() === params.sid;
-    });
-
-    return {
+      coffeeStore = coffeeStoreData.find((store) => {
+        return store.id.toString() === params.sid;
+      }) as any;
+    }
+    const initialProps = {
       props: {
-        coffeeStore: findCoffeeStoreById || emptyCoffeeStore,
+        coffeeStore: coffeeStore || emptyCoffeeStore,
+        isStatic: true,
       },
     };
+    console.log("getStaticProps returning: ", { initialProps });
+    return initialProps;
   } catch (error) {
     console.error("there was an error getting static props", error.message);
     return {
@@ -84,23 +120,6 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
   useEffect(() => {
     const findStoreInContext = (): CoffeeStore => {
       return state.coffeeStores.find((store) => router.query.sid === store.id);
-    };
-
-    const handleSaveCoffeeStore = async (newCoffeeStore: CoffeeStore) => {
-      try {
-        const response = await fetch("/api/saveCoffeeStore", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(newCoffeeStore),
-        });
-      } catch (error) {
-        console.error("Error creating coffeestore", {
-          newCoffeeStore,
-          error: error.message,
-        });
-      }
     };
 
     const handleFindDbRecordById = async (id: string) => {
@@ -153,15 +172,15 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
   }, [data]);
 
   const handleUpVoteButton = async () => {
-    setNumVotes(coffeeStore.votes+1)
+    setNumVotes(coffeeStore.votes + 1);
     const response = await fetch(`/api/upvoteCoffeeStore?id=${coffeeStore.id}`);
     if (response.status === 200) {
       const json = await response.json();
-      const updatedCoffeeStore = json.coffeeStore
+      const updatedCoffeeStore = json.coffeeStore;
       setCoffeeStore(updatedCoffeeStore);
-      setNumVotes(updatedCoffeeStore.votes)
+      setNumVotes(updatedCoffeeStore.votes);
     } else {
-      console.error('Something went wrong while upvoting')
+      console.error("Something went wrong while upvoting");
     }
   };
 

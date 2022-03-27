@@ -3,23 +3,45 @@ import Image from "next/image";
 import Banner from "../components/banner";
 import Card from "../components/card";
 import styles from "../styles/home.module.css";
-import { CoffeeStore, StaticHomeProps } from "../types";
+
+import { CoffeeStore, HomeProps } from "../types";
 
 import { ActionTypes, StoreContext } from "../store/store-context";
-import { useContext, useEffect, useState, useRef } from "react";
+import { useContext, useEffect, useState } from "react";
 import useLocation from "../hooks/useLocation";
+
 import { fetchCoffeeStoreData } from "../lib/foursquare";
 import { decodeCoffeeStoreURIs } from "../lib/coffee-stores";
+import { findStaticPageRecords } from "../lib/airtable";
+
+import { createRecords } from "../lib/airtable";
 
 export async function getStaticProps(context: any) {
-  const data = await fetchCoffeeStoreData({
-    latLong: "19.3854034,-99.1680344",
-    limit: 6,
-  });
-  return { props: { staticCoffeeStores: data } };
+  try {
+    const dbStaticCoffeeStores = await findStaticPageRecords();
+    let staticCoffeeStores: CoffeeStore[];
+    if (dbStaticCoffeeStores.length !== 0)
+      staticCoffeeStores = dbStaticCoffeeStores.map(
+        (record) => record.fields as any
+      );
+    else {
+      staticCoffeeStores = await fetchCoffeeStoreData({
+        latLong: "19.3854034,-99.1680344",
+        limit: 6,
+      });
+      staticCoffeeStores.forEach(
+        (coffeeStore: CoffeeStore) => (coffeeStore.static = true)
+      );
+      createRecords(staticCoffeeStores);
+    }
+
+    return { props: { staticCoffeeStores } };
+  } catch (error) {
+    console.error("There was an error fetching static props in /");
+  }
 }
 
-export default function Home(props: StaticHomeProps) {
+export default function Home(props: HomeProps) {
   const { state, dispatch } = useContext(StoreContext);
   const { latLong } = state;
   const [coffeeStoresError, setCoffeeStoresError] = useState("");

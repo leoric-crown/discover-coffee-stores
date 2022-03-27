@@ -73,7 +73,7 @@ const transformCoffeeStoreRes = (results) => {
     return [];
   }
 };
-const fsqPlacesReq = async (queryParameters: QueryParameters) => {
+const fsqPlacesRequest = async (queryParameters: QueryParameters) => {
   try {
     const queryString = generateQueryString(queryParameters);
     const response = await fetch(queryString, queryOptions);
@@ -84,7 +84,7 @@ const fsqPlacesReq = async (queryParameters: QueryParameters) => {
 
     return decodedCoffeeStores;
   } catch (error) {
-    console.error("There was an error in fsqPlacesReq: ", error.message);
+    console.error("There was an error in fsqPlacesRequest: ", error.message);
     throw error;
   }
 };
@@ -92,7 +92,7 @@ const fsqPlacesReq = async (queryParameters: QueryParameters) => {
 export async function fetchCoffeeStoreData(queryParameters: QueryParameters) {
   try {
     const { query, latLong, category, limit } = queryParameters;
-    const coffeeStoreData = await fsqPlacesReq({
+    const coffeeStoreData = await fsqPlacesRequest({
       query: query || null,
       latLong: latLong || null, //"19.3854034,-99.1680344",
       category: category || null,
