@@ -111,8 +111,8 @@ export default function Home(props: HomeProps) {
       <div className={styles.heroImage}>
         <Image
           src="/static/hero-image.png"
-          width={700}
-          height={400}
+          width={800}
+          height={343}
           alt="heroImage"
         ></Image>
       </div>
