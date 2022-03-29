@@ -92,7 +92,6 @@ const fsqPlacesRequest = async (queryParameters: QueryParameters) => {
 };
 
 export async function fetchCoffeeStoreData(queryParameters: QueryParameters) {
-  console.log("fetchCoffeeStoreData");
   try {
     const { query, latLong, categories, limit } = queryParameters;
     const coffeeStoreData = await fsqPlacesRequest({
@@ -135,8 +134,6 @@ export async function fetchCoffeeStoreData(queryParameters: QueryParameters) {
         });
       })
     );
-
-    console.log("coffeeStoreDataWithImages", { coffeeStoreDataWithImages });
 
     return coffeeStoreDataWithImages;
   } catch (error) {

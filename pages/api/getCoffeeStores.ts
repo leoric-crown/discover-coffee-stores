@@ -4,7 +4,6 @@ const getCoffeeStores = async (req: { query: QueryParameters }, res) => {
   try {
     const queryParameters = req.query;
     const coffeeStoreData = await fetchCoffeeStoreData(queryParameters);
-    console.log("getCoffeeStore.ts", { coffeeStoreData });
     res.status(200).json(coffeeStoreData);
   } catch (error) {
     res
