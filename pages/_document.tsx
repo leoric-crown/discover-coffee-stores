@@ -6,6 +6,7 @@ class MyDocument extends Document {
     return (
       <Html lang="en">
         <meta charSet="UTF-8"></meta>
+        <meta name="description" content="A project based on Next.js Zero to Mastery course on Udemy"/>
         <Head>
           <link
             rel="preload"
