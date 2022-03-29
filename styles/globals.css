@@ -25,6 +25,7 @@ body {
   font-style: normal;
   font-weight: 200;
   src: url(/fonts/Pacifico-Regular.ttf) format("truetype");
+  font-display: swap;
 }
 
 @font-face {
@@ -32,6 +33,7 @@ body {
   font-style: normal;
   font-weight: 500;
   src: url(/fonts/IBMPlexSans-Regular.ttf) format("truetype");
+  font-display: swap;
 }
 
 @font-face {
@@ -39,6 +41,7 @@ body {
   font-style: normal;
   font-weight: 600;
   src: url(/fonts/IBMPlexSans-SemiBold.ttf) format("truetype");
+  font-display: swap;
 }
 
 @font-face {
@@ -46,6 +49,7 @@ body {
   font-style: normal;
   font-weight: 700;
   src: url(/fonts/IBMPlexSans-Bold.ttf) format("truetype");
+  font-display: swap;
 }
 
 a {
