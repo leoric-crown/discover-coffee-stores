@@ -103,6 +103,10 @@ export default function Home(props: HomeProps) {
       <Head>
         <title>Coffee Connoisseur</title>
         <link rel="icon" href="/favicon.ico" />
+        <meta
+          name="description"
+          content="Find Coffee stores near you: a project based on Next.js Zero to Mastery course on Udemy"
+        />
       </Head>
       <div className={styles.heroImage}>
         <Image
