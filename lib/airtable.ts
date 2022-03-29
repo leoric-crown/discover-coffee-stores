@@ -30,7 +30,7 @@ const parseImgUrl = (record) => {
   return parsedRecord;
 };
 
-export const upvoteCoffeeStore = async (id: string, votes: number) => {
+export const upvoteRecord = async (id: string, votes: number) => {
   const updateArray = [
     {
       id,

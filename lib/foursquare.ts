@@ -92,6 +92,7 @@ const fsqPlacesRequest = async (queryParameters: QueryParameters) => {
 };
 
 export async function fetchCoffeeStoreData(queryParameters: QueryParameters) {
+  console.log("fetchCoffeeStoreData");
   try {
     const { query, latLong, categories, limit } = queryParameters;
     const coffeeStoreData = await fsqPlacesRequest({
@@ -101,6 +102,14 @@ export async function fetchCoffeeStoreData(queryParameters: QueryParameters) {
       limit: limit || 6,
     });
 
+    const defaultImgUrl = {
+      prefix:
+        "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80",
+      suffix: "",
+      width: null,
+      height: null,
+    };
+
     const coffeeStoreDataWithImages: CoffeeStore[] = await Promise.all(
       coffeeStoreData.map(async (coffeeStore) => {
         const fsq_id = coffeeStore.id;
@@ -108,6 +117,12 @@ export async function fetchCoffeeStoreData(queryParameters: QueryParameters) {
         return new Promise((resolve) => {
           response.json().then((json) => {
             const topPhoto = json[0];
+
+            if (!topPhoto?.prefix) {
+              resolve({ ...coffeeStore, imgUrl: defaultImgUrl });
+              return;
+            }
+
             const { prefix, suffix, width, height } = topPhoto;
             const imgUrl: ImgUrl = {
               prefix,
@@ -120,6 +135,8 @@ export async function fetchCoffeeStoreData(queryParameters: QueryParameters) {
         });
       })
     );
+
+    console.log("coffeeStoreDataWithImages", { coffeeStoreDataWithImages });
 
     return coffeeStoreDataWithImages;
   } catch (error) {

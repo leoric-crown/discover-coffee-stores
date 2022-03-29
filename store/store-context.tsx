@@ -1,4 +1,4 @@
-import React, { createContext, useReducer, useRef } from "react";
+import React, { createContext, useReducer } from "react";
 import { CoffeeStore } from "../types";
 
 export interface StoreState {
@@ -57,6 +57,7 @@ export const StoreContext = createContext<{
   dispatch: () => undefined,
 });
 
+// eslint-disable-next-line react/prop-types
 const StoreProvider = ({ children }) => {
   const [state, dispatch] = useReducer(storeReducer, initialState);
 

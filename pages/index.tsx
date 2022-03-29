@@ -18,6 +18,9 @@ import { parseRecords } from "../lib/parse-records";
 import { createRecords } from "../lib/airtable";
 import { fetchNewStaticCoffeeStores, defaultLatLong } from "../lib/foursquare";
 
+const defaultImgUrl =
+  "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80";
+
 export async function getStaticProps() {
   try {
     const dbStaticCoffeeStores = await findStaticPageRecords();
@@ -102,7 +105,12 @@ export default function Home(props: HomeProps) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <div className={styles.heroImage}>
-        <Image src="/static/hero-image.png" width={700} height={400}></Image>
+        <Image
+          src="/static/hero-image.png"
+          width={700}
+          height={400}
+          alt="heroImage"
+        ></Image>
       </div>
 
       <main className={styles.main}>
@@ -136,8 +144,7 @@ export default function Home(props: HomeProps) {
                       key={store.id}
                       name={store.name}
                       imgUrl={
-                        getImgUrl(store.imgUrl, 250, 250) ||
-                        "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80"
+                        getImgUrl(store.imgUrl, 250, 250) || defaultImgUrl
                       }
                       href={`/coffee-store/${store.id}`}
                     />
@@ -156,10 +163,7 @@ export default function Home(props: HomeProps) {
                 <Card
                   key={store.id}
                   name={store.name}
-                  imgUrl={
-                    getImgUrl(store.imgUrl, 250, 250) ||
-                    "https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80"
-                  }
+                  imgUrl={getImgUrl(store.imgUrl, 250, 250) || defaultImgUrl}
                   href={`/coffee-store/${store.id}`}
                 />
               );
