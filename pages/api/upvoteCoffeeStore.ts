@@ -1,22 +1,19 @@
-import table, {
-  findRecordById,
-  getCoffeeStoreFromRecord,
-} from "../../lib/airtable";
-import { upvoteCoffeeStore } from "../../lib/airtable";
+import { findRecordById } from "../../lib/airtable";
+import { upvoteRecord } from "../../lib/airtable";
 
-export default async (req, res) => {
+const upvoteCoffeeStore = async (req, res) => {
   try {
     if (req.method === "GET") {
       const { id } = req.query;
       const findCoffeeStoreRecord = await findRecordById(id);
       if (findCoffeeStoreRecord) {
         const dbId = findCoffeeStoreRecord.id;
-        const updatedCoffeeStore = await upvoteCoffeeStore(
+        const updatedCoffeeStore = await upvoteRecord(
           dbId,
           findCoffeeStoreRecord.fields.votes
         );
         return res.status(200).json({
-          message: "Record has been upvoted!",
+          message: "CoffeeStore Record has been upvoted!",
           newNumVotes: updatedCoffeeStore.votes,
           coffeeStore: updatedCoffeeStore,
         });
@@ -38,3 +35,6 @@ export default async (req, res) => {
     });
   }
 };
+
+
+export default upvoteCoffeeStore

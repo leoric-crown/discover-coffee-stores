@@ -1,8 +1,8 @@
-import table, { findRecordsById } from "../../lib/airtable";
+import { findRecordsById } from "../../lib/airtable";
 import { CoffeeStore } from "../../types";
 import { createRecords } from "../../lib/airtable";
 
-export default async (req, res) => {
+const saveStaticCoffeeStores = async (req, res) => {
   if (req.method !== "POST") {
     return res.status(501).json({
       message: "Please send a POST request to use this endpoint",
@@ -52,3 +52,5 @@ export default async (req, res) => {
     });
   }
 };
+
+export default saveStaticCoffeeStores

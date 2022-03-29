@@ -1,6 +1,6 @@
 import { QueryParameters, fetchCoffeeStoreData } from "../../lib/foursquare";
 
-export default async (req: { query: QueryParameters }, res) => {
+const getCoffeeStores = async (req: { query: QueryParameters }, res) => {
   try {
     const queryParameters = req.query;
     const coffeeStoreData = await fetchCoffeeStoreData(queryParameters)
@@ -9,3 +9,6 @@ export default async (req: { query: QueryParameters }, res) => {
       res.status(500).json({ message:'There was an unexpected error: ' + error.message})
   }
 };
+
+
+export default getCoffeeStores

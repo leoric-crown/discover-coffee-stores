@@ -1,7 +1,7 @@
-import table, { findRecordById } from "../../lib/airtable";
+import { findRecordById } from "../../lib/airtable";
 import { createRecord } from "../../lib/airtable";
 
-export default async (req, res) => {
+const saveCoffeeStore = async (req, res) => {
   try {
     const coffeeStore = req.body;
     if (req.method === "POST") {
@@ -39,3 +39,5 @@ export default async (req, res) => {
     });
   }
 };
+
+export default saveCoffeeStore;

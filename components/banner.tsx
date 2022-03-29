@@ -1,5 +1,6 @@
 import styles from "../styles/banner.module.css";
 import { BannerProps } from "../types";
+import React from "react";
 
 const Banner = (props: BannerProps) => {
   const { handleOnClick, buttonText } = props;

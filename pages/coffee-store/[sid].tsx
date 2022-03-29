@@ -9,7 +9,7 @@ import styles from "../../styles/coffee-store.module.css";
 
 import cls from "classnames";
 import { StoreContext } from "../../store/store-context";
-import { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   fetchNewStaticCoffeeStores,
   defaultLatLong,
@@ -65,7 +65,7 @@ export async function getStaticProps({ params }) {
     let coffeeStore: CoffeeStore;
 
     if (dbStaticCoffeeStore?.fields) {
-      coffeeStore = dbStaticCoffeeStore.fields as any;
+      coffeeStore = dbStaticCoffeeStore.fields;
     } else {
       const apiStaticCoffeeStores = await fetchNewStaticCoffeeStores(
         defaultLatLong,
@@ -105,12 +105,14 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
     };
 
     const handleFindDbRecordById = async (id: string) => {
-      const recordInDb = await fetch(`/api/getCoffeeStoreById?id=${id}`);
-      const json = await recordInDb.json();
+      if (id !== null) {
+        const recordInDb = await fetch(`/api/getCoffeeStoreById?id=${id}`);
+        const json = await recordInDb.json();
 
-      if (recordInDb.status !== 404) {
-        setCoffeeStore(json.record.fields);
-        setNumVotes(json.record.fields.votes);
+        if (recordInDb.status !== 404) {
+          setCoffeeStore(json.record.fields);
+          setNumVotes(json.record.fields.votes);
+        }
       }
     };
 
@@ -141,7 +143,7 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
         });
       }
     }
-  }, []);
+  }, [coffeeStore, router.asPath, router.query.sid, state.coffeeStores]);
   const { id, name, imgUrl, neighbourhood, address } = coffeeStore
     ? coffeeStore
     : emptyCoffeeStore;
@@ -163,7 +165,6 @@ export default function CoffeeStorePage(initialProps: CoffeeStorePageProps) {
 
     if (response.status === 200) {
       const prevImgUrl = coffeeStore.imgUrl;
-      const { imgUrl, ...fields } = json.coffeeStore;
       const updatedCoffeeStore: CoffeeStore = {
         imgUrl: prevImgUrl,
         ...json.coffeeStore,

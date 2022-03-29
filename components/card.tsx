@@ -3,6 +3,7 @@ import Link from "next/link";
 import cls from "classnames";
 import styles from "../styles/card.module.css";
 import { CardProps } from "../types";
+import React from 'react'
 
 const Card = (props: CardProps) => {
   const { name, imgUrl, href } = props;
@@ -19,6 +20,7 @@ const Card = (props: CardProps) => {
             width={1}
             height={1}
             layout="responsive"
+            alt={name + "image"}
           />
         </div>
       </a>

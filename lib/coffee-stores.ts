@@ -3,7 +3,7 @@ import { CoffeeStore, ImgUrl } from "../types";
 export const decodeCoffeeStoreURIs = (coffeeStores: CoffeeStore[]) => {
   const decodedCoffeeStores = coffeeStores.map((coffeeStore) => {
     const keys = Object.keys(coffeeStore);
-    let decoded = coffeeStore;
+    const decoded = coffeeStore;
     for (let i = 0; i < keys.length; i++) {
       if (typeof coffeeStore[keys[i]] === "string") {
         decoded[keys[i]] = decodeURIComponent(
@@ -25,6 +25,7 @@ export const handleSaveCoffeeStore = async (newCoffeeStore: CoffeeStore) => {
       },
       body: JSON.stringify(newCoffeeStore),
     });
+    return response;
   } catch (error) {
     console.error("Error creating coffeestore", {
       newCoffeeStore,

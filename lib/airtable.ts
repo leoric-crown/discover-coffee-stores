@@ -21,7 +21,7 @@ export const findRecordsById = async (records) => {
 };
 const parseImgUrl = (record) => {
   const parsedRecord = record;
-  const coffeeStoreFields = record?.fields as any;
+  const coffeeStoreFields = record?.fields;
   if (coffeeStoreFields?.imgUrl) {
     const { imgUrl } = coffeeStoreFields;
     coffeeStoreFields.imgUrl = JSON.parse(imgUrl);
@@ -100,7 +100,7 @@ export const createRecords = async (coffeeStores: CoffeeStore[]) => {
       fields: { ...coffeeStore },
     };
   });
-  const savedRecords = await table.create(fieldsToCreate as any);
+  const savedRecords = await table.create(fieldsToCreate);
 
   return savedRecords;
 };

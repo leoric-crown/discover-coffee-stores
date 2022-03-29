@@ -1,6 +1,6 @@
-import table, { findRecordById } from "../../lib/airtable";
+import { findRecordById } from "../../lib/airtable";
 
-export default async (req, res) => {
+const getCoffeeStoreById = async (req, res) => {
   try {
     const { id } = req.query;
     if (!id) {
@@ -29,3 +29,6 @@ export default async (req, res) => {
     });
   }
 };
+
+
+export default getCoffeeStoreById

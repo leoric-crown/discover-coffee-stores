@@ -2,6 +2,7 @@ import Head from "next/head";
 import Image from "next/image";
 import Banner from "../components/banner";
 import Card from "../components/card";
+import React from "react";
 import styles from "../styles/home.module.css";
 
 import { CoffeeStore, HomeProps } from "../types";
@@ -17,7 +18,7 @@ import { parseRecords } from "../lib/parse-records";
 import { createRecords } from "../lib/airtable";
 import { fetchNewStaticCoffeeStores, defaultLatLong } from "../lib/foursquare";
 
-export async function getStaticProps(context: any) {
+export async function getStaticProps() {
   try {
     const dbStaticCoffeeStores = await findStaticPageRecords();
     let staticCoffeeStores: CoffeeStore[];
@@ -46,30 +47,6 @@ export default function Home(props: HomeProps) {
   const { latLongResult, handleLocation, locationErrorMsg, isFindingLocation } =
     useLocation();
 
-  const fetchLatLongCoffeeStores = async (newLatLong: string) => {
-    try {
-      const response = await fetch(
-        `/api/getCoffeeStores?latLong=${newLatLong}&limit=${12}`
-      );
-      const responseCoffeeStores: CoffeeStore[] = await response.json();
-      if (responseCoffeeStores.length > 0) {
-        dispatch({
-          type: ActionTypes.SetCoffeeStores,
-          payload: decodeCoffeeStoreURIs(responseCoffeeStores),
-        });
-
-        dispatch({
-          type: ActionTypes.SetHaveResults,
-          payload: true,
-        });
-        setIsFetchingData(false);
-        setCoffeeStoresError("");
-      }
-    } catch (error) {
-      setCoffeeStoresError(error.message);
-    }
-  };
-
   useEffect(() => {
     if (latLongResult.length > 0 && latLongResult !== latLong) {
       dispatch({
@@ -81,14 +58,38 @@ export default function Home(props: HomeProps) {
         payload: false,
       });
     }
-  }, [latLongResult]);
+  }, [latLong, latLongResult, dispatch]);
 
   useEffect(() => {
+    const fetchLatLongCoffeeStores = async (newLatLong: string) => {
+      try {
+        const response = await fetch(
+          `/api/getCoffeeStores?latLong=${newLatLong}&limit=${12}`
+        );
+        const responseCoffeeStores: CoffeeStore[] = await response.json();
+        if (responseCoffeeStores.length > 0) {
+          dispatch({
+            type: ActionTypes.SetCoffeeStores,
+            payload: decodeCoffeeStoreURIs(responseCoffeeStores),
+          });
+
+          dispatch({
+            type: ActionTypes.SetHaveResults,
+            payload: true,
+          });
+          setIsFetchingData(false);
+          setCoffeeStoresError("");
+        }
+      } catch (error) {
+        setCoffeeStoresError(error.message);
+      }
+    };
+
     if (latLong.length > 0 && latLongResult.length > 0) {
       setIsFetchingData(true);
       fetchLatLongCoffeeStores(latLong);
     }
-  }, [latLong]);
+  }, [latLong, latLongResult.length, dispatch]);
 
   const handleOnBannerBtnClick = () => {
     handleLocation();

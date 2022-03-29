@@ -105,17 +105,18 @@ export async function fetchCoffeeStoreData(queryParameters: QueryParameters) {
       coffeeStoreData.map(async (coffeeStore) => {
         const fsq_id = coffeeStore.id;
         const response = await fetch(endpoints.fsqPhotos(fsq_id), queryOptions);
-        return new Promise(async (resolve) => {
-          const json = await response.json();
-          const topPhoto = json[0];
-          const { prefix, suffix, width, height } = topPhoto
-          const imgUrl: ImgUrl = {
-            prefix,
-            suffix,
-            width,
-            height
-          }
-          resolve({ ...coffeeStore, imgUrl } as CoffeeStore);
+        return new Promise((resolve) => {
+          response.json().then((json) => {
+            const topPhoto = json[0];
+            const { prefix, suffix, width, height } = topPhoto;
+            const imgUrl: ImgUrl = {
+              prefix,
+              suffix,
+              width,
+              height,
+            };
+            resolve({ ...coffeeStore, imgUrl } as CoffeeStore);
+          });
         });
       })
     );
